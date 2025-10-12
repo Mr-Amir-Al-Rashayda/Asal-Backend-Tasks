@@ -13,8 +13,6 @@ The core constraint was to use **only basic Python syntax** (e.g., `if`/`elif`/`
 - **`classifier.py`**: Contains all the functional logic, including the filtering functions, printing mechanism, and the main user interaction loop.  
 - **`email_data.py`**: Serves as the mock data source. It holds the list of email dictionaries, simulating a database or API response with fields like `status` and `days_ago`.  
 - **`AsalTask1.drawio`**: The raw diagram file for the project's control flow.  
-  *(It is recommended to also upload a `.png` or `.svg` version of this file for visualization.)*
-
 ---
 
 ### 2. Control Flow Logic (The Decision Block)
