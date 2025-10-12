@@ -2,9 +2,6 @@
 
 ##  Project Goal
 This project's primary goal was to **practice foundational Python concepts** essential for backend development, specifically **Control Flow** and **Data Filtering**, by simulating the process of managing an inbox.
-
-The core constraint was to use **only basic Python syntax** (e.g., `if`/`elif`/`else`, `while` loops, basic string manipulation) and **avoid advanced libraries or Object-Oriented Programming (OOP)** to demonstrate fundamental logic.
-
 ---
 
 ##  Implementation Details
