@@ -48,6 +48,6 @@ It highlights the proper use of:
 3.  Run the following command:
 
     ```bash
-    python classifier.py
+    python main.py
     ```
 ```eof
