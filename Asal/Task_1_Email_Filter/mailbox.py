@@ -1,10 +1,6 @@
 from typing import List, Dict, Any
 
-# Define a type alias for readability
 EmailDict = Dict[str, Any]
-
-# Imports the raw data from email_data.py 
-from email_data import EMAILS 
 
 class Mailbox:
     """
@@ -12,10 +8,12 @@ class Mailbox:
     """
     
     def __init__(self, emails: List[EmailDict]):
+        # Stores a safe shallow copy of the list to protect the original data source.
         self.emails: List[EmailDict] = emails[:]
     
     def filter_unread(self) -> List[EmailDict]:
         """Returns a list of UNREAD emails."""
+        # Using a generic status check suitable for mock or real data
         return [email for email in self.emails if email.get('status') == "UNREAD"]
 
     def filter_last_day(self) -> List[EmailDict]:
