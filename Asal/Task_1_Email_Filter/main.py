@@ -1,9 +1,8 @@
 
 from mailbox import Mailbox
 from report_generator import ReportGenerator 
-from email_data import EMAILS # Still needed for the Local File option
-from data_fetcher import GmailFetcher # NEW: Import the Gmail connector
-from typing import List, Dict, Any 
+from data_loaders import LocalFileLoader, GmailLoader, EmailLoader, DatabaseLoader # MODIFIED
+from typing import List, Dict, Any, Optional # Add Optional 
 
 
 # Maps user input (1-4) to the Mailbox filtering method
@@ -22,50 +21,75 @@ FILTER_TITLES = {
     "4": "ALL EMAILS",
 }
 
-def select_and_fetch_data() -> List[Dict[str, Any]]:
-    """Prompts user for data source and returns the email list."""
+def create_data_loader() -> Optional[EmailLoader]: # Renamed function
+    """
+    Factory function: Prompts user for data source and returns the 
+    correct concrete EmailLoader object.
+    """
     
     print("\n--- Data Source Selection ---")
     print("1: Use Local Mock File (email_data.py)")
     print("2: Connect to Live Gmail Account (Requires App Password)")
+    print("3: Load from MySQL Database") 
     
-    source_choice = input("Enter data source choice (1 or 2): ")
+    source_choice = input("Enter data source choice (1, 2, or 3): ")
     
-    if source_choice == "1":
-        print("Using local mock file...")
-        return EMAILS # Return the list imported from the local file
+    # Dispatch dictionary for cleaner code
+    def create_local_loader():
+        return LocalFileLoader()
     
-    elif source_choice == "2":
+    def create_gmail_loader():
         print("\n--- Gmail Authentication ---")
         print("NOTE: You need an App Password (not your regular password).")
         
         GMAIL_USERNAME = input("Enter Gmail Username (e.g., yourname@gmail.com): ")
         GMAIL_APP_PASSWORD = input("Enter Gmail App Password: ")
         
-        fetcher = GmailFetcher(GMAIL_USERNAME, GMAIL_APP_PASSWORD)
-        return fetcher.connect_and_fetch(count=10) # Fetch up to 10 live emails
+        return GmailLoader(GMAIL_USERNAME, GMAIL_APP_PASSWORD, count=10)
     
+    def create_database_loader():
+        return DatabaseLoader()
+    
+    # Dispatch dictionary mapping choices to factory functions
+    LOADER_FACTORIES = {
+        "1": create_local_loader,
+        "2": create_gmail_loader,
+        "3": create_database_loader,
+    }
+    
+    factory_func = LOADER_FACTORIES.get(source_choice)
+    if factory_func:
+        return factory_func()
     else:
-        print("Invalid source choice. Defaulting to local file.")
-        return EMAILS
-
+        print("Invalid source choice.")
+        return None
+    
 
 def run_email_processor():
     """Manages the program loop and user interaction."""
     
-    # STEP 1: SELECT AND FETCH DATA
-    email_data = select_and_fetch_data()
+    # --- STEP 1: SELECT LOADER (Factory) ---
+    loader = create_data_loader() # Get the loader *strategy*
+    
+    if not loader:
+        print("\nFATAL ERROR: No data loader selected. Exiting.")
+        return
+
+    # --- STEP 2: FETCH DATA (Execute Strategy) ---
+    # The abstraction in action!
+    # main.py does not know if this is loading from a file or Gmail.
+    email_data = loader.load_emails()
     
     if not email_data:
         print("\nFATAL ERROR: Could not load any email data. Exiting.")
         return
 
-    # STEP 2: LOCAL INITIALIZATION
+    # --- STEP 3: LOCAL INITIALIZATION (Unchanged) ---
     mailbox = Mailbox(email_data)
     reporter = ReportGenerator()
     print(f"Data Source Initialized with {len(email_data)} emails.")
     
-    # STEP 3: MAIN LOOP
+    # --- STEP 4: MAIN LOOP ---
     while True:
         # Display the main filtering menu
         print("\n" + "=" * 50)

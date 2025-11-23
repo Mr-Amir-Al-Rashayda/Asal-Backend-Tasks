@@ -1,0 +1,49 @@
+services:
+  # Service 1: The Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: my-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    # Healthcheck ensures RabbitMQ is ready before others start
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Service 2: Your API (The Publisher)
+  api:
+    build: .
+    container_name: my-api
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app  # Syncs your code so you can edit live
+    environment:
+      - PYTHONUNBUFFERED=1  # Disable Python output buffering for Docker logs
+      - RABBITMQ_HOST=rabbitmq  # <--- NETWORKING MAGIC!
+      # Connect to host machine's MySQL (host.docker.internal)
+      - DB_HOST=host.docker.internal 
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Service 3: Your Worker (The Subscriber)
+  worker:
+    build: .
+    container_name: my-worker
+    command: python -u worker.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1  # Disable Python output buffering for Docker logs
+      - RABBITMQ_HOST=rabbitmq  # <--- NETWORKING MAGIC!
+      - DB_HOST=host.docker.internal
+      - GMAIL_USER=${GMAIL_USER} # Passes from your local .env
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
